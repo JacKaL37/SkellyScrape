@@ -22,7 +22,7 @@ export async function fetchUrlContent(url: string) {
     const content = ""
 
     // Extract links
-    const extractedLinks = extractLinks(html, url)
+    const extractedLinks = await extractLinks(html, url)
 
     return { content, extractedLinks }
   } catch (error) {
@@ -56,7 +56,7 @@ ${html.substring(0, 100000)}`, // Limit size to avoid token limits
 }
 
 // Function to extract links from HTML
-export function extractLinks(html: string, baseUrl: string) {
+export async function extractLinks(html: string, baseUrl: string) {
   const links: string[] = []
   const linkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"[^>]*>/g
 
@@ -101,7 +101,7 @@ export function extractLinks(html: string, baseUrl: string) {
 }
 
 // Function to process a URL and extract data based on column headers
-export async function processUrl(url: string, headers: string[]) {
+export async function processUrl(url: string, headers: string[], extractionGuidance?: string) {
   try {
     // Fetch the URL content
     const response = await fetch(url)
@@ -114,20 +114,33 @@ export async function processUrl(url: string, headers: string[]) {
     // Convert HTML to Markdown
     const markdown = await convertHtmlToMarkdown(html)
 
+    // Prepare the prompt with optional extraction guidance
+    let prompt = `You are extracting data for a table. Here is a web page in Markdown:
+    ---
+    ${markdown.substring(0, 100000)}
+    ---
+
+    Please extract a row with the following fields:
+    ${headers.map((header) => `- ${header}`).join("\n")}
+
+    `
+
+    // Add extraction guidance if provided
+    if (extractionGuidance && extractionGuidance.trim()) {
+      prompt += `Additional guidance for extraction:
+    ${extractionGuidance.trim()}
+
+    `
+    }
+
+    prompt += `IMPORTANT: Return ONLY a valid JSON array with the values in the exact order listed above. If a field is not found, use null. Do not include any explanation or additional text.
+
+    Example format: ["value1", "value2", null, "value4"]`
+
     // Use AI to extract data based on column headers
     const { text } = await generateText({
       model: openai("gpt-4o"),
-      prompt: `You are extracting data for a table. Here is a web page in Markdown:
----
-${markdown.substring(0, 100000)}
----
-
-Please extract a row with the following fields:
-${headers.map((header) => `- ${header}`).join("\n")}
-
-IMPORTANT: Return ONLY a valid JSON array with the values in the exact order listed above. If a field is not found, use null. Do not include any explanation or additional text.
-
-Example format: ["value1", "value2", null, "value4"]`,
+      prompt: prompt,
     })
 
     // Parse the AI response as JSON

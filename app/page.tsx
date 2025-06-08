@@ -18,6 +18,7 @@ export default function WebScraper() {
   const [initialFetchDone, setInitialFetchDone] = useState(false)
   const [links, setLinks] = useState<{ url: string; checked: boolean }[]>([])
   const [columnHeaders, setColumnHeaders] = useState("")
+  const [extractionGuidance, setExtractionGuidance] = useState("")
   const [processingLinks, setProcessingLinks] = useState(false)
   const [currentBatch, setCurrentBatch] = useState(0)
   const [results, setResults] = useState<any[]>([])
@@ -84,7 +85,7 @@ export default function WebScraper() {
 
       // Process links in parallel within each batch
       const batchPromises = batchLinks.map((link) =>
-        processUrl(link, headers)
+        processUrl(link, headers, extractionGuidance)
           .then((data) => {
             setResults((prev) => [...prev, { url: link, ...data }])
             return data
@@ -250,6 +251,20 @@ Example: Name, Description, Price"
                 className="mb-4"
                 rows={3}
               />
+
+              <div className="mb-4">
+                <label htmlFor="extraction-guidance" className="block text-sm font-medium mb-1">
+                  Extraction Guidance (Optional)
+                </label>
+                <Textarea
+                  id="extraction-guidance"
+                  placeholder="Provide additional guidance for the AI on how to extract data.
+              Example: Look for product prices in the main content area. The description is usually in the first paragraph."
+                  value={extractionGuidance}
+                  onChange={(e) => setExtractionGuidance(e.target.value)}
+                  rows={3}
+                />
+              </div>
 
               <Button
                 onClick={startProcessing}
