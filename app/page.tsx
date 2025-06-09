@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { TagInput } from "@/components/ui/tag-input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Download, ExternalLink } from "lucide-react"
 import { fetchUrlContent, processUrl } from "@/lib/scraper"
@@ -17,7 +18,7 @@ export default function WebScraper() {
   const [loading, setLoading] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
   const [links, setLinks] = useState<{ url: string; checked: boolean }[]>([])
-  const [columnHeaders, setColumnHeaders] = useState("")
+  const [columnHeaders, setColumnHeaders] = useState<string[]>([])
   const [extractionGuidance, setExtractionGuidance] = useState("")
   const [processingLinks, setProcessingLinks] = useState(false)
   const [currentBatch, setCurrentBatch] = useState(0)
@@ -51,20 +52,12 @@ export default function WebScraper() {
   }
 
   const startProcessing = async () => {
-    if (!columnHeaders.trim()) {
+    if (columnHeaders.length === 0) {
       alert("Please enter column headers")
       return
     }
 
-    const headers = columnHeaders
-      .split(/,|\n/)
-      .map((header) => header.trim())
-      .filter(Boolean)
-
-    if (headers.length === 0) {
-      alert("Please enter valid column headers")
-      return
-    }
+    const headers = columnHeaders // No need to split since it's already an array
 
     const selectedLinks = links.filter((link) => link.checked).map((link) => link.url)
     if (selectedLinks.length === 0) {
@@ -243,14 +236,17 @@ export default function WebScraper() {
               <CardTitle>Step 3: Define Column Headers</CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
-                placeholder="Enter column headers (comma-separated or one per line)
-Example: Name, Description, Price"
-                value={columnHeaders}
-                onChange={(e) => setColumnHeaders(e.target.value)}
-                className="mb-4"
-                rows={3}
-              />
+              <div className="mb-4">
+                <TagInput
+                  placeholder="Type column headers and press Enter (e.g. Name, Description, Price)"
+                  tags={columnHeaders}
+                  setTags={setColumnHeaders}
+                  className="min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Press Enter or comma to add a header, Backspace to remove
+                </p>
+              </div>
 
               <div className="mb-4">
                 <label htmlFor="extraction-guidance" className="block text-sm font-medium mb-1">

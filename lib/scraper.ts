@@ -1,7 +1,3 @@
-// todos: expose prompting (both phases), implement ai at link scrape, log at bottom, deploy??
-// ? hovers, explanations, check boxes for (good, reject etc)
-// donuts have holes. nice.
-// right-align links (or somehow else)
 "use server"
 
 import { generateText } from "ai"
