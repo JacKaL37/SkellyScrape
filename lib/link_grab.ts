@@ -5,6 +5,16 @@ import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
+interface Link {
+  index: number;
+  url: string;
+}
+
+interface TaggedLink extends Link {
+  checked: boolean;
+  relevance: 'highlyRelevant' | 'maybeRelevant' | 'irrelevant';
+}
+
 // Initialize OpenAI client (requires OPENAI_API_KEY in .env)
 const openai = new OpenAI();
 
@@ -32,7 +42,7 @@ const LinkSelectionSchema = z.object({
 // Main function
 async function main() {
   // Get structured selection from OpenAI
-  const completion = await openai.beta.chat.completions.parse({
+  const completion = await openai.chat.completions.parse({
     model: "gpt-4o-2024-08-06",
     messages: [
       { role: "system", content: "Evaluate and bucket link indexes by relevance." },
@@ -46,7 +56,13 @@ async function main() {
     response_format: zodResponseFormat(LinkSelectionSchema, "linkSelection"),
   });
 
-  const selection = completion.choices[0].message.parsed;
+    const selection = completion.choices[0].message.parsed;
+
+  // Add a null check before accessing properties
+  if (!selection) {
+    console.error("Failed to parse link selection from API response");
+    process.exit(1);
+  }
 
   // Helper: parse "1-3" into [1,2,3]
   const parseIndices = (ranges: string[]) =>
