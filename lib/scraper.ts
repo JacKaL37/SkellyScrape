@@ -2,6 +2,7 @@
 
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
+import {groq} from "@ai-sdk/groq"
 
 // Function to fetch URL content and extract links
 export async function fetchUrlContent(url: string) {
@@ -27,29 +28,29 @@ export async function fetchUrlContent(url: string) {
   }
 }
 
-// Function to convert HTML to Markdown
-async function convertHtmlToMarkdown(html: string) {
-  try {
-    // Use AI to convert HTML to Markdown for better readability
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
-      prompt: `Convert the following HTML to clean, readable Markdown. Focus on the main content and remove navigation, ads, footers, etc:
+// // Function to convert HTML to Markdown
+// async function convertHtmlToMarkdown(html: string) {
+//   try {
+//     // Use AI to convert HTML to Markdown for better readability
+//     const { text } = await generateText({
+//       model: openai("gpt-4o"),
+//       prompt: `Convert the following HTML to clean, readable Markdown. Focus on the main content and remove navigation, ads, footers, etc:
 
-${html.substring(0, 100000)}`, // Limit size to avoid token limits
-    })
+// ${html.substring(0, 100000)}`, // Limit size to avoid token limits
+//     })
 
-    return text
-  } catch (error) {
-    console.error("Error converting HTML to Markdown:", error)
-    // Fallback to simple HTML if AI conversion fails
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-  }
-}
+//     return text
+//   } catch (error) {
+//     console.error("Error converting HTML to Markdown:", error)
+//     // Fallback to simple HTML if AI conversion fails
+//     return html
+//       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+//       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+//       .replace(/<[^>]+>/g, " ")
+//       .replace(/\s+/g, " ")
+//       .trim()
+//   }
+// }
 
 // Function to extract links from HTML
 export async function extractLinks(html: string, baseUrl: string) {
@@ -107,13 +108,13 @@ export async function processUrl(url: string, headers: string[], extractionGuida
 
     const html = await response.text()
 
-    // Convert HTML to Markdown
-    const markdown = await convertHtmlToMarkdown(html)
+    // // Convert HTML to Markdown
+    // const markdown = await convertHtmlToMarkdown(html)
 
     // Prepare the prompt with optional extraction guidance
-    let prompt = `You are extracting data for a table. Here is a web page in Markdown:
+    let prompt = `You are extracting data for a table. Here is a web page:
     ---
-    ${markdown.substring(0, 100000)}
+    ${html.substring(0, 100000)}
     ---
 
     Please extract a row with the following fields:
@@ -135,7 +136,8 @@ export async function processUrl(url: string, headers: string[], extractionGuida
 
     // Use AI to extract data based on column headers
     const { text } = await generateText({
-      model: openai("gpt-4o"),
+      // model: openai("gpt-4o"),
+      model: groq("llama-3.1-8b-instant"),
       prompt: prompt,
     })
 
@@ -179,7 +181,7 @@ export async function processUrl(url: string, headers: string[], extractionGuida
           prompt: `Extract data from this content for these fields: ${headers.join(", ")}
 
 Content:
-${markdown.substring(0, 50000)}
+${html.substring(0, 50000)}
 
 For each field, provide the value or "N/A" if not found. Format as:
 ${headers.map((header) => `${header}: [value]`).join("\n")}`,
