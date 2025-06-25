@@ -23,7 +23,7 @@ export default function ResultsTable({ results }: ResultsTableProps) {
     <div className="border rounded-md overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-background">
             {headers.map((header) => (
               <TableHead key={header} className="whitespace-nowrap">
                 {header}
@@ -33,7 +33,7 @@ export default function ResultsTable({ results }: ResultsTableProps) {
         </TableHeader>
         <TableBody>
           {results.map((row, rowIndex) => (
-            <TableRow key={rowIndex}>
+            <TableRow className="bg-background" key={rowIndex}>
               {headers.map((header) => (
                 <TableCell key={`${rowIndex}-${header}`} className="max-w-[300px] truncate">
                   {header === "url" ? (

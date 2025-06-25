@@ -31,7 +31,7 @@ export default function WebScraper() {
     setLoading(true)
     try {
       const { content, extractedLinks } = await fetchUrlContent(url)
-      setLinks(extractedLinks.map((link) => ({ url: link, checked: true })))
+      setLinks(extractedLinks.map((link) => ({ url: link, checked: false })))
       setInitialFetchDone(true)
     } catch (error) {
       console.error("Error fetching URL:", error)
@@ -196,7 +196,7 @@ export default function WebScraper() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="max-h-[400px] overflow-y-auto border rounded-md p-4">
+              <div className="max-h-[400px] overflow-y-auto border bg-background rounded-md p-4">
                 {links.length > 0 ? (
                   <ul className="space-y-2">
                     {links.map((link, index) => (
