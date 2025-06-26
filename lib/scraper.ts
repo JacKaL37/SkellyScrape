@@ -2,7 +2,8 @@
 
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
-import {groq} from "@ai-sdk/groq"
+import { groq } from "@ai-sdk/groq"
+import TurndownService from 'turndown'
 
 // Function to fetch URL content and extract links
 export async function fetchUrlContent(url: string) {
@@ -15,42 +16,19 @@ export async function fetchUrlContent(url: string) {
 
     const html = await response.text()
 
-    // We don't need content conversion anymore since we're not showing preview
-    const content = ""
+    const turndownService = new TurndownService();
+
+    const markdown = turndownService.turndown(html);
 
     // Extract links
     const extractedLinks = await extractLinks(html, url)
 
-    return { content, extractedLinks }
+    return { markdown, extractedLinks }
   } catch (error) {
     console.error("Error in fetchUrlContent:", error)
     throw error
   }
 }
-
-// // Function to convert HTML to Markdown
-// async function convertHtmlToMarkdown(html: string) {
-//   try {
-//     // Use AI to convert HTML to Markdown for better readability
-//     const { text } = await generateText({
-//       model: openai("gpt-4o"),
-//       prompt: `Convert the following HTML to clean, readable Markdown. Focus on the main content and remove navigation, ads, footers, etc:
-
-// ${html.substring(0, 100000)}`, // Limit size to avoid token limits
-//     })
-
-//     return text
-//   } catch (error) {
-//     console.error("Error converting HTML to Markdown:", error)
-//     // Fallback to simple HTML if AI conversion fails
-//     return html
-//       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-//       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-//       .replace(/<[^>]+>/g, " ")
-//       .replace(/\s+/g, " ")
-//       .trim()
-//   }
-// }
 
 // Function to extract links from HTML
 export async function extractLinks(html: string, baseUrl: string) {
