@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 "use server"
 
 import { generateText, generateObject } from "ai"
@@ -8,10 +7,14 @@ import TurndownService from 'turndown'
 import { z } from 'zod'
 import { zodSchema } from 'ai'
 
+import * as he from 'he'
+
 import 'dotenv/config'
 import { create } from "domain"
 
 const turndownService = new TurndownService();
+
+
 
 // Function to fetch URL content and extract links
 export async function fetchUrlHtmlContent(url: string) {
@@ -51,7 +54,7 @@ export async function extractLinksFromHtml(html: string, baseUrl: string) {
   
   while ((match = linkRegex.exec(html)) !== null) {
     let link = match[1];
-    const text = match[2].replace(/<[^>]*>/g, '').trim(); // Remove any nested HTML tags and trim
+    const text = he.decode(match[2].replace(/<[^>]*>/g, '').trim()); // Remove any nested HTML tags and trim
     
     // Skip empty links, anchors, javascript, mailto
     if (!link || link.startsWith("#") || link.startsWith("javascript:") || link.startsWith("mailto:")) {
@@ -97,7 +100,7 @@ export async function extractLinksFromHtml(html: string, baseUrl: string) {
 //   highRelevance: "10-30, 3, 9"  <-- highest relevance will be preselected, ai ranks left to right for relv
 //   midRelevance: "5-8, 1" <-- mid relevance will be listed second, but not preselected
 // } <-- all others are not selected, not sorted. (i.e., no "low relevance" category)
-export async function aiRecommendTargetLinks(guidance: str, linklist: {label: string, url: string}[], url: string, markdown: string, html: string){
+export async function aiRecommendTargetLinks(guidance: string, linklist: {label: string, url: string}[], url: string, markdown: string, html: string){
     
     // converts list to: [index (inferred), label, url]
     const linklistFormatted = linklist.map((link: any, index: any) => [index, link.label, link.url]);
@@ -201,7 +204,7 @@ export async function discoverAndGatherLinks(url: string, userGuidance: string) 
 }
 
 // Function to create a dynamic Zod schema from user-defined headers
-export function createDynamicSchema(headers: string[]) {
+export async function createDynamicSchema(headers: string[]) {
   const schemaObj: Record<string, any> = {};
 
   headers.forEach(header => {
@@ -225,7 +228,7 @@ export async function aiExtractTargetData(
 ) {
   try {
     // Create a dynamic schema based on the headers
-    const dynamicSchema = createDynamicSchema(headers);
+    const dynamicSchema = await createDynamicSchema(headers);
 
     const repeatPrompt = `
     Information to extract: ${headers.join(", ")}
@@ -233,7 +236,7 @@ export async function aiExtractTargetData(
     Extraction Guidance: ${extractionGuidance || ""}
     
     Respond only with valid JSON that matches the schema provided.
-    For numbers, use undecorated text.
+    For numbers, do not include commas or currency symbols.
     For dates, use ISO format (YYYY-MM-DD).
     `
 
@@ -256,6 +259,7 @@ export async function aiExtractTargetData(
 
     // Use AI to extract data based on schema
     const result = await generateObject({
+      //model: groq("llama-3.1-8b-instant"),
       model: openai("gpt-4o"), // Using more capable model for extraction
       prompt: prompt,
       schema: zodSchema(dynamicSchema),
@@ -263,16 +267,19 @@ export async function aiExtractTargetData(
 
     // Convert schema keys back to original headers
     const finalResult: Record<string, any> = {};
-    headers.forEach(header => {
-      const schemaKey = header.trim().replace(/\s+/g, '_').toLowerCase();
-      finalResult[header] = result.object[schemaKey] || null;
-    });
 
     // Add the URL to the result for display in the table
     if (!headers.includes('url')) {
-      finalResult['link'] = `[${pageLink.label}](${pageLink.url})`;
-      finalResult['url'] = pageLink.url; // Add raw URL for reference
+      finalResult['link_label'] = he.decode(pageLink.label);
+      finalResult['link_url'] = pageLink.url; // Add raw URL for reference
     }
+
+    headers.forEach(header => {
+      const schemaKey = header.trim().replace(/\s+/g, '_').toLowerCase();
+      finalResult[header] = result.object[schemaKey] ? he.decode(result.object[schemaKey]) : null;
+    });
+
+    
 
     return finalResult;
   } catch (error) {
@@ -337,7 +344,7 @@ async function testMe(){
     var url = await "https://www.restaurantbusinessonline.com/top-500-2025-ranking"
     console.log(url)
 
-    var userGuidance = "Select the links most likely to contain data about specific individual restaurants in the top 500."
+    var userGuidance = "Select the links most likely to contain data about specific individual restaurants in the top 500. Skip anything that doesn't link to a specific restaurant page."
 
     var html = await fetchUrlHtmlContent(url)
     // console.log("Fetched HTML content from URL:", url)
@@ -368,11 +375,11 @@ async function testMe(){
     console.log("Recommended links:", recommendedLinks);
 
 
-    var headers = ["name", "url", "revenue", "rank", "location", "type"];
+    var headers = ["name", "revenue", "rank", "location", "type"];
     var extractionGuidance = "You'll need to infer rank from the pagination data on the page, as it is not with the rest of the information.";
 
 
-    var dynamicSchema = createDynamicSchema(headers);
+    var dynamicSchema = await createDynamicSchema(headers);
     console.log("Dynamic Zod schema created:", dynamicSchema.shape);
 
     var firstSelectedLink = selected[0];
@@ -395,7 +402,7 @@ async function testMe(){
     var results = await processSelectedLinks(
         headers,
         extractionGuidance,
-        selected
+        selected.slice(0,10)
     );
     console.log("Processed results:", results);
 
