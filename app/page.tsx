@@ -14,7 +14,7 @@ import { fetchUrlContent, processUrl } from "@/lib/scraper"
 import ResultsTable from "@/components/results-table"
 
 export default function WebScraper() {
-  const [url, setUrl] = useState("")
+  const [url, setUrl] = useState("https://www.restaurantbusinessonline.com/top-500-2025-ranking")
   const [loading, setLoading] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
   const [links, setLinks] = useState<{ url: string; checked: boolean }[]>([])

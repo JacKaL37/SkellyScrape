@@ -1,0 +1,10 @@
+name: New model
+version: 0.0.1
+schema: v1
+models:
+  - provider: mistral
+    model: codestral-latest
+    apiKey: 0P96b8g0S3ix8hvTPaYG5em11rvdCdXI
+    name: codestral
+    roles:
+      - chat
