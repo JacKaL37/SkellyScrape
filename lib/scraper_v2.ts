@@ -1,11 +1,10 @@
 "use server"
 
-import { generateText, generateObject } from "ai"
+import { generateText, generateObject, zodSchema } from "ai"
 import { openai } from "@ai-sdk/openai"
 import { groq } from "@ai-sdk/groq"
 import TurndownService from 'turndown'
 import { z } from 'zod'
-import { zodSchema } from 'ai'
 
 import * as he from 'he'
 
@@ -35,9 +34,45 @@ export async function fetchUrlHtmlContent(url: string) {
 }
 
 export async function extractMarkdownFromHtml(html: string){
-    const markdown = turndownService.turndown(html);
+    // Create a customized TurndownService instance
+    const turndownService = new TurndownService({
+        headingStyle: 'atx',       // Use # style headings
+        hr: '---',                 // Use --- for horizontal rules
+        bulletListMarker: '-',     // Use - for bullet lists
+        codeBlockStyle: 'fenced',  // Use ``` for code blocks
+        emDelimiter: '_'           // Use _ for emphasis
+    });
+    
+    // Configure turndownService to ignore certain elements
+    turndownService.remove(['script', 'style', 'meta', 'noscript', 'iframe', 'form', 
+                           'nav', 'footer', 'aside', 'head', 'link', 'object']);
+    
+    // You can add custom rules to handle specific elements
+    turndownService.addRule('removeComments', {
+        filter: function(node) {
+            return node.nodeType === 8; // Node.COMMENT_NODE
+        },
+        replacement: function() {
+            return '';
+        }
+    });
+    
+    // Handle empty paragraphs or divs with no content
+    turndownService.addRule('skipEmptyBlocks', {
+        filter: ['p', 'div'],
+        replacement: function(content) {
+            if (!content.trim()) return '';
+            return '\n\n' + content + '\n\n';
+        }
+    });
 
-    return markdown;
+    // Process the HTML and convert to markdown
+    const markdown = turndownService.turndown(html);
+    
+    // Additional post-processing to clean up the markdown
+    return markdown
+        .replace(/\n{3,}/g, '\n\n')           // Replace multiple consecutive line breaks with max two
+        .replace(/^\s+|\s+$/g, '');           // Trim leading/trailing whitespace
 }
 
 //schema:
@@ -143,6 +178,7 @@ export async function aiRecommendTargetLinks(guidance: string, linklist: {label:
         model: openai("gpt-4o"),
         prompt: prompt,
         schema: zodSchema(schema),
+        temperature: 0.0,
     });
     //gpt-4o's cleverness was required here. 
 
@@ -263,6 +299,7 @@ export async function aiExtractTargetData(
       model: openai("gpt-4o"), // Using more capable model for extraction
       prompt: prompt,
       schema: zodSchema(dynamicSchema),
+      temperature: 0.0,
     });
 
     // Convert schema keys back to original headers
@@ -409,4 +446,4 @@ async function testMe(){
 }
 
 
-testMe().catch(console.error);
+// testMe().catch(console.error);

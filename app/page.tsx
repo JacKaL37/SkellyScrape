@@ -16,7 +16,7 @@ import ResultsTable from "@/components/results-table"
 
 export default function WebScraper() {
   const [url, setUrl] = useState("https://www.restaurantbusinessonline.com/top-500-2025-ranking")
-  const [userGuidance, setUserGuidance] = useState("Select the links most likely to contain data about specific individual restaurants in the top 500.")
+  const [userGuidance, setUserGuidance] = useState("Select the links most likely to contain data about specific individual restaurants in the top 500. Skip things that don't link directly to pages about individual restaurants.")
   const [loading, setLoading] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
   const [pageMarkdown, setPageMarkdown] = useState("")
@@ -27,8 +27,8 @@ export default function WebScraper() {
   const [remainingLinks, setRemainingLinks] = useState<Array<{ label: string, url: string, checked: boolean }>>([])
   
   // Data extraction states
-  const [columnHeaders, setColumnHeaders] = useState<string[]>([])
-  const [extractionGuidance, setExtractionGuidance] = useState("")
+  const [columnHeaders, setColumnHeaders] = useState<string[]>(["name","revenue(millions)","rank","locations","category"])
+  const [extractionGuidance, setExtractionGuidance] = useState("rank is equivalent to the page number, so search for it there, not with the rest of the data")
   const [processingLinks, setProcessingLinks] = useState(false)
   const [currentBatch, setCurrentBatch] = useState(0)
   const [results, setResults] = useState<any[]>([])
@@ -219,8 +219,18 @@ export default function WebScraper() {
 
   return (
     <div className="container mx-auto py-8 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6 text-center">SkellyScrape💀✨🔮</h1>
-
+      <h1 className="text-3xl font-bold mb-6 text-center">SkellyScrape💀✨🔮📑</h1>
+      <Card className="mb-6 bg-purple-950">
+        <CardHeader>
+          <h1 className="text-2xl font-bold mb-2">Phase 1: Discover and Select Links</h1>
+        </CardHeader>
+        <CardContent>
+          <p className="text-xs text-muted-foreground mt-1 mb-2"><em>
+          Finding relevant links on a root page, preselected by AI, finalized by the user.  
+        </em></p>
+        </CardContent>
+      </Card>
+      
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Step 1: Enter URL & Guidance</CardTitle>
@@ -228,10 +238,14 @@ export default function WebScraper() {
         <CardContent>
           <form onSubmit={handleUrlSubmit} className="space-y-4">
             <div>
-              <label htmlFor="url-input" className="block text-sm font-medium mb-1">
-                URL to Scrape
+              <label htmlFor="url-input" className="block text-m font-medium mb-1 text-pink-400">
+                Link extraction URL
               </label>
+              <p className="text-xs text-muted-foreground mt-1 mb-1 text-pink-300"><em>
+                Any page that contains several links to pages containing data to be extracted.  
+              </em></p>
               <Input
+                className="bg-pink-800"
                 id="url-input"
                 type="url"
                 placeholder="https://example.com"
@@ -242,10 +256,14 @@ export default function WebScraper() {
             </div>
             
             <div>
-              <label htmlFor="guidance-input" className="block text-sm font-medium mb-1">
-                User Guidance (for AI link selection)
+              <label htmlFor="guidance-input" className="block text-m font-medium mb-1 text-pink-400">
+                Pre-Selection Guidance (AI)
               </label>
+              <p className="text-xs text-muted-foreground mt-1 mb-1 text-pink-300"><em>
+                Any criteria you want to give the AI for identifying relevant links on the page.
+              </em></p>
               <Textarea
+                className="bg-pink-800"
                 id="guidance-input"
                 placeholder="Describe what kind of pages you're looking for. Example: Select links that lead to product detail pages."
                 value={userGuidance}
@@ -270,13 +288,16 @@ export default function WebScraper() {
 
       {initialFetchDone && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Card className="h-full">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+            <Card>
               <CardHeader>
-                <CardTitle>Page Preview</CardTitle>
+                <CardTitle>Page Text Preview</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1"><em>
+                  Text extracted directly from the page.
+                </em></p>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                <ScrollArea className="h-[240px] w-full rounded-md border p-4 bg-gray-700 text-gray-400">
                   <div className="prose prose-sm dark:prose-invert">
                     {pageMarkdown ? (
                       <div className="whitespace-pre-wrap">{pageMarkdown}</div>
@@ -288,15 +309,21 @@ export default function WebScraper() {
               </CardContent>
             </Card>
 
-            <Card className="h-full">
+            <Card>
               <CardHeader>
                 <CardTitle>Step 2: Select Links to Process</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1"><em>
+                  Decide which links to send on to the AI for initial data extraction.
+                </em></p>
               </CardHeader>
               <CardContent className="space-y-4">
                 {highRelevanceLinks.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold">High Relevance Links ({highRelevanceLinks.length})</h3>
+                      <h3 className="text-m font-semibold text-fuchsia-400">Preselected ({highRelevanceLinks.length})</h3>
+                      <p className="text-xs text-muted-foreground mt-1 mb-1 text-fuchsia-300"><em>
+                        Links the AI identified as aligning most closely with the user's guidance for preselection.
+                      </em></p>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => selectAllLinks('high', true)}>
                           Select All
@@ -306,7 +333,7 @@ export default function WebScraper() {
                         </Button>
                       </div>
                     </div>
-                    <ScrollArea className="h-[150px] w-full rounded-md border p-4">
+                    <ScrollArea className="h-[150px] w-full bg-fuchsia-950 rounded-md border p-4">
                       {renderLinkList(highRelevanceLinks, 'high')}
                     </ScrollArea>
                   </div>
@@ -315,7 +342,10 @@ export default function WebScraper() {
                 {midRelevanceLinks.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold">Medium Relevance Links ({midRelevanceLinks.length})</h3>
+                      <h3 className="text-m font-semibold text-cyan-400">Maybes ({midRelevanceLinks.length})</h3>
+                      <p className="text-xs text-muted-foreground mt-1 mb-2 text-cyan-300"><em>
+                        Links the AI identified as being semi-relevant, not preselected.
+                      </em></p>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => selectAllLinks('mid', true)}>
                           Select All
@@ -325,7 +355,7 @@ export default function WebScraper() {
                         </Button>
                       </div>
                     </div>
-                    <ScrollArea className="h-[150px] w-full rounded-md border p-4">
+                    <ScrollArea className="h-[150px] w-full rounded-md border p-4 bg-cyan-950">
                       {renderLinkList(midRelevanceLinks, 'mid')}
                     </ScrollArea>
                   </div>
@@ -334,7 +364,10 @@ export default function WebScraper() {
                 {remainingLinks.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold">Other Links ({remainingLinks.length})</h3>
+                      <h3 className="text-m font-semibold">Remaining ({remainingLinks.length})</h3>
+                      <p className="text-xs text-muted-foreground mt-1"><em>
+                        Links the AI did not identify as having any particular relevance to the preselection guidance.
+                      </em></p>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => selectAllLinks('remaining', true)}>
                           Select All
@@ -352,6 +385,16 @@ export default function WebScraper() {
               </CardContent>
             </Card>
           </div>
+          <Card className="mb-2  bg-purple-950">
+            <CardHeader>          
+              <h1 className="text-2xl font-bold">Phase 2: Extract Data from Links</h1>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mt-1 mb-2"><em>
+                For each link selected in Phase 1, define data to be extracted by the AI, with any useful guidance the user can provide.
+              </em></p>
+            </CardContent>
+          </Card>
 
           <Card className="mb-6">
             <CardHeader>
@@ -359,26 +402,33 @@ export default function WebScraper() {
             </CardHeader>
             <CardContent>
               <div className="mb-4">
-                <label htmlFor="column-headers" className="block text-sm font-medium mb-1">
+                <label htmlFor="column-headers" className="block text-m font-medium mb-1 text-pink-400">
                   Column Headers
                 </label>
+                <p className="text-xs text-muted-foreground mt-1 mb-1 text-pink-300"><em>
+                  Meaningful names for the data fields to be extracted from each page.
+                </em></p>
                 <TagInput
                   id="column-headers"
                   placeholder="Type column headers and press Enter (e.g. Name, Revenue, Rank)"
                   tags={columnHeaders}
                   setTags={setColumnHeaders}
-                  className="min-h-[80px]"
+                  className="min-h-[80px] bg-pink-800"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Press Enter or comma to add a header, Backspace to remove
+                  <em>Press Enter or comma to add a header, Backspace to remove</em>
                 </p>
               </div>
 
               <div className="mb-4">
-                <label htmlFor="extraction-guidance" className="block text-sm font-medium mb-1">
-                  Extraction Guidance (Optional)
+                <label htmlFor="extraction-guidance" className="block text-m font-medium mb-1 text-pink-400">
+                  Extraction Guidance (AI)
                 </label>
+                <p className="text-xs text-muted-foreground mt-1 mb-1 text-pink-300"><em>
+                  Gudiance for how the AI should extract data from the page, things like formats, locations, how to infer or synthesize information, or other special instructions. 
+                </em></p>
                 <Textarea
+                  className="bg-pink-800"
                   id="extraction-guidance"
                   placeholder="Provide additional guidance for the AI on how to extract data.
 Example: Look for product prices in the main content area. The description is usually in the first paragraph."
@@ -415,6 +465,12 @@ Example: Look for product prices in the main content area. The description is us
           <Card>
             <CardHeader>
               <CardTitle>Results ({results.length})</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1 mb-1"><em>
+                Results of calls to the AI will populate here as they are processed.
+              </em></p>
+              <p className="text-xs text-muted-foreground mt-1 mb-1 text-red-400">
+                ⚠️AI systems are prone to mistakes, so manually inspect results before treating them as a source of truth.⚠️
+              </p>
             </CardHeader>
             <CardContent>
               <ResultsTable results={results} />

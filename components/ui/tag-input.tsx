@@ -83,7 +83,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
           <Badge 
             key={`${tag}-${index}`}
             variant="secondary"
-            className={cn("flex items-center gap-1 text-lg", badgeClassName)}
+            className={cn("flex items-center gap-1 text-lg bg-pink-600", badgeClassName)}
           >
             {tag}
             <button 
@@ -104,7 +104,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           placeholder={tags.length === 0 ? placeholder : undefined}
-          className={cn("flex-1 border-0 p-0 placeholder:text-muted-foreground focus-visible:ring-0", inputClassName)}
+          className={cn("flex-1 border-0 p-0 placeholder:text-muted-foreground bg-transparent", inputClassName)}
           {...props}
         />
       </div>
